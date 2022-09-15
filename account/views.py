@@ -44,15 +44,15 @@ class UserDetailApiView(APIView):
         except User.DoesNotExist:
             raise Http404
 
-    # def get(self, request, id):
-    #     user = self.get_object(id)
-    #     product = Product.objects.filter(user_id=id)
-    #     serializer = UserSerializers(user)
-    #     serializer2 = ProductSerializer(product, many=True)
-    #     data = serializer.data
-    #     data['product'] = serializer2.data
-    #     data['quantity'] = len(serializer2.data)
-    #     return Response(data)
+    def get(self, request, id):
+        user = self.get_object(id)
+        product = Product.objects.filter(id=id)
+        serializer = UserSerializers(user)
+        # serializer2 = ProductSerializer(product, many=True)
+        data = serializer.data
+        # data['product'] = serializer2.data
+        # data['quantity'] = len(serializer2.data)
+        return Response(data)
 
 
 class UserDestroyApiView(APIView):

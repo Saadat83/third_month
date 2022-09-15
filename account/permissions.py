@@ -24,11 +24,11 @@ class AnonPermissionOnly(permissions.BasePermission):
 #         return request.user.groups.filter(name='VENDOR').exists()
 
 
-# class IsVendor(IsAuthenticated):
-#     def has_permission(self, request, view):
-#         is_authenticated = super().has_permission(request, view)
-#         user = Account.objects.get(user=request.user)
-#         if not is_authenticated:
-#             return False
-#
-#         return user.isVendor
+class IsVendor(IsAuthenticated):
+    def has_permission(self, request, view):
+        is_authenticated = super().has_permission(request, view)
+        user = Account.objects.get(user=request.user)
+        if not is_authenticated:
+            return False
+
+        return user.isVendor
