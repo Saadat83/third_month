@@ -14,14 +14,8 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 class AnonPermissionOnly(permissions.BasePermission):
     message = "You are already authenticated"
 
-    def has_object_permission(self, request, view):
-        return not request.user.is_authenticated
-
-# class IsVendor2(IsAuthenticated):
-#     def has_permission(self, request, view, obj):
-#         if request.method in permissions.SAFE_METHODS:
-#             return True
-#         return request.user.groups.filter(name='VENDOR').exists()
+    def has_object_permission(self, request, view, obj):
+        return request.user.is_authenticated
 
 
 class IsVendor(IsAuthenticated):

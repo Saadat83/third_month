@@ -1,3 +1,5 @@
+import math
+
 from django.http import Http404
 from rest_framework import permissions, status
 from rest_framework.parsers import JSONParser
@@ -8,7 +10,8 @@ from rest_framework.views import APIView
 
 from product.models import Product
 from product.serializers import ProductSerializer
-from .serializers import MyTokenObtainPairSerializer, UserSerializers
+from .models import Account
+from .serializers import MyTokenObtainPairSerializer, UserSerializers, AccountSerializers
 from django.contrib.auth.models import User
 from .serializers import RegisterSerializer
 from .permissions import AnonPermissionOnly
@@ -24,14 +27,47 @@ class RegisterView(CreateAPIView):
     permission_classes = (AnonPermissionOnly,)
     serializer_class = RegisterSerializer
 
+class RegisterApiView(APIView):
+    permission_classes = [permissions.AllowAny]
+    parser_classes = [JSONParser]
+
+    def post(self, request):
+        serializers = AccountSerializers(data=request.data)
+        if serializers.is_valid():
+            user = User.objects.create(
+                username=request.data['username'],
+                email=request.data['email']
+            )
+            user.set_password(request.data['password'])
+            user.save()
+            account = Account.objects.create(
+                user=user,
+                phone_number=request.data['phone_number'],
+            )
+            account.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class UserListApiView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
         users = User.objects.all()
-        serializer = UserSerializers(users, many=True)
-        return Response(serializer.data)
+
+        page = int(request.GET.get('page', 1))
+        per_page = 4
+        total = users.count()
+        start = (page - 1) * per_page
+        end = page * per_page
+
+        serializer = UserSerializers(users[start:end], many=True)
+        return Response({
+            'data': serializer.data,
+            'total': total,
+            'page': page,
+            'last_page': math.ceil(total / per_page)
+        })
 
 
 class UserDetailApiView(APIView):
@@ -46,9 +82,7 @@ class UserDetailApiView(APIView):
 
     def get(self, request, id):
         user = self.get_object(id)
-        product = Product.objects.filter(id=id)
-        serializer = UserSerializers(user)
-        # serializer2 = ProductSerializer(product, many=True)
+        serializer = RegisterSerializer(user)
         data = serializer.data
         # data['product'] = serializer2.data
         # data['quantity'] = len(serializer2.data)
@@ -58,7 +92,7 @@ class UserDetailApiView(APIView):
 class UserDestroyApiView(APIView):
     def get_object(self, id):
         try:
-            return User.objects.get(user_id=id)
+            return User.objects.get(id=id)
         except User.DoesNotExist:
             raise Http404
 

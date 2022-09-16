@@ -1,3 +1,5 @@
+import math
+
 from django.http import Http404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.parsers import JSONParser
@@ -8,7 +10,6 @@ from .models import Product, Category
 from rest_framework.views import APIView
 from .serializers import ProductSerializer, CategorySerializer
 from rest_framework import permissions, status, generics
-from django.core.paginator import Paginator
 
 
 class ProductListApiView(APIView):
@@ -16,18 +17,27 @@ class ProductListApiView(APIView):
 
     def get(self, request):
         products = Product.objects.all()
-        paginator = Paginator(products, 5)
-        page_num = self.request.query_params.get('page')
-        print(page_num)
-        serializers = ProductSerializer(paginator.page(page_num), many=True)
-        return Response(serializers.data)
+
+        page = int(request.GET.get('page', 1))
+        per_page = 4
+        total = products.count()
+        start = (page - 1) * per_page
+        end = page * per_page
+
+        serializer = ProductSerializer(products[start:end], many=True)
+        return Response({
+            'data': serializer.data,
+            'total': total,
+            'page': page,
+            'last_page': math.ceil(total/per_page)
+        })
 
 
 class ProductFilterApiView(generics.ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['category', 'price', 'quantity']
+    filterset_fields = ['category', 'name', 'price']
 
 
 class ProductCreateApiView(APIView):
@@ -35,8 +45,8 @@ class ProductCreateApiView(APIView):
     def post(self, request):
         serializers = ProductSerializer(data=request.data)
         if serializers.is_valid():
-            serializers.save()
-            return Response(serializers.data, status=status.HTTP_201_CREATED)
+           serializers.save()
+           return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -155,7 +165,7 @@ class CategoryDestroyApiView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class PriceApiView(APIView):
+class FilterPriceApiView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, price):
@@ -165,21 +175,8 @@ class PriceApiView(APIView):
         return Response(data)
 
 
-class PriceListApiView(APIView):
-    def get(self,request):
-        products = Product.objects.all()
-        price_list = []
-        for p in products:
-            price_list.append(p.price)
-        avg_price = sum(price_list) / len(price_list)
-
-        data = {
-            "avg_price": avg_price
-        }
-        return Response(data)
-
-
 class AvgPriceListApiView(APIView):
+
     def get(self, request):
         products = Product.objects.all()
         price_list = []
@@ -239,17 +236,32 @@ class Revenue(APIView):
         return Response(data)
 
 
-class LenProduct(APIView):
-
+class Dashboard(APIView):
     def get(self, request):
         products = Product.objects.all()
-        posts = []
+        price_list = []
+        revenue = []
+        for p in products:
+            price_list.append(p.price)
+        avg_price = sum(price_list) / len(price_list)
+        min_price = min(price_list)
+        max_price = max(price_list)
+        quantity_of_prod = len(price_list)
         for i in products:
-            posts.append(i.id)
+            one = i.price * i.quantity
+            revenue.append(one)
+        revenue = sum(revenue)
+        inf = {
+            "avg_price": avg_price,
+            "min_price": min_price,
+            "max_price": max_price,
+            "revenue": revenue,
+            "quantity_of_prod": quantity_of_prod
 
-        product = len(posts)
-
-        data = {
-            "product": product
         }
-        return Response(data)
+        return Response(inf)
+
+
+
+
+

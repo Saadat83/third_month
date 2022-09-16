@@ -14,11 +14,11 @@ from .views import(
 
     AvgPriceListApiView,
     ProductFilterApiView,
-    PriceApiView,
+    FilterPriceApiView,
     MinPriceApiView,
     MaxPriceApiView,
     Revenue,
-    LenProduct
+    Dashboard,
 )
 
 urlpatterns = [
@@ -36,10 +36,10 @@ urlpatterns = [
     path('cat_delete/<int:id>/', CategoryDestroyApiView.as_view(), name='cat_delete'),
 
     path('avg/', AvgPriceListApiView.as_view(), name='avg'),
-    path('filter_price/<int:price>/', PriceApiView.as_view(), name='filter-price'),
+    path('filter_price/<int:price>/', FilterPriceApiView.as_view(), name='filter-price'),
     path('min/',  MinPriceApiView.as_view(), name='min'),
     path('max/',  MaxPriceApiView.as_view(), name='max'),
     path('revenue/',  Revenue.as_view(), name='revenue'),
-    path('len_product/', LenProduct.as_view(), name='products'),
+    path('dashboard/',  Dashboard.as_view(), name='dashboard'),
 ]
 
