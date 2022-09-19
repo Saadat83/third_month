@@ -1,0 +1,1 @@
+Web: gunicorn saadat_project.wsgi
